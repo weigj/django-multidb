@@ -1,0 +1,11 @@
+[
+    {
+        "pk": "1", 
+        "model": "fixtures_regress.animal", 
+        "fields": {
+            "name": "Lion", 
+            "latin_name": "Panthera leo",
+            "count": 3
+        }
+    }
+]
