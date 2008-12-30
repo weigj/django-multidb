@@ -25,6 +25,7 @@ class Manager(object):
         super(Manager, self).__init__()
         self._set_creation_counter()
         self.model = None
+        self.connection = None
         self._inherited = False
 
     def contribute_to_class(self, model, name):
@@ -69,7 +70,10 @@ class Manager(object):
         """Returns a new QuerySet object.  Subclasses can override this method
         to easily customize the behavior of the Manager.
         """
-        return QuerySet(self.model)
+        if self.connection:
+            return self.get_query_set_by_connection(self.connection)
+        else:
+            return QuerySet(self.model)
 
     def none(self):
         return self.get_empty_query_set()
@@ -139,6 +143,19 @@ class Manager(object):
 
     def _update(self, values, **kwargs):
         return self.get_query_set()._update(values, **kwargs)
+    
+    def get_connection(self):
+        from django.db import get_current_connection
+        return self.connection or get_current_connection() 
+    
+    def get_query_set_by_connection(self, connection):
+        query = connection.query_class()(self.model, connection)
+        return QuerySet(self.model, query)
+    
+    def using(self, dbname, *args, **kwargs):
+        from django.db import get_connection
+        return self.get_query_set_by_connection(get_connection(dbname))
+        
 
 class ManagerDescriptor(object):
     # This class ensures managers aren't accessible via model instances.

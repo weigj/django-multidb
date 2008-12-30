@@ -43,7 +43,11 @@ Are you sure you want to do this?
             try:
                 cursor = connection.cursor()
                 for sql in sql_list:
-                    cursor.execute(sql)
+                    try:
+                        cursor.execute(sql)
+                    except Exception, e:
+                        #print "error! %s %s" % (sql,e)
+                        pass
             except Exception, e:
                 transaction.rollback_unless_managed()
                 raise CommandError("""Database %s couldn't be flushed. Possible reasons:

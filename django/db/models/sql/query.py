@@ -27,7 +27,7 @@ try:
 except NameError:
     from sets import Set as set     # Python 2.3 fallback
 
-__all__ = ['Query', 'BaseQuery']
+__all__ = ['Query', 'BaseQuery', 'query_class_wrap']
 
 class BaseQuery(object):
     """
@@ -1197,7 +1197,7 @@ class BaseQuery(object):
             self.promote_alias_chain(join_it, join_promote)
             self.promote_alias_chain(table_it, table_promote)
 
-        self.where.add((alias, col, field, lookup_type, value), connector)
+        self.where.add((alias, col, field, lookup_type, value), connector, self.connection)
 
         if negate:
             self.promote_alias_chain(join_list)
@@ -1783,6 +1783,13 @@ if connection.features.uses_custom_query_class:
 else:
     Query = BaseQuery
 
+def query_class_wrap(connection,QueryClass=BaseQuery):
+    if connection.features.uses_custom_query_class:
+    	Query = connection.ops.query_class(BaseQuery)
+    else:
+    	Query = BaseQuery
+    return Query
+    
 def get_order_dir(field, default='ASC'):
     """
     Returns the field name and direction for an order specification. For

@@ -3,5 +3,5 @@ from subqueries import *
 from where import AND, OR
 from datastructures import EmptyResultSet
 
-__all__ = ['Query', 'AND', 'OR', 'EmptyResultSet']
+__all__ = ['Query', 'AND', 'OR', 'EmptyResultSet', 'query_class_warp']
 

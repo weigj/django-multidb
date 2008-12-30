@@ -27,7 +27,7 @@ class WhereNode(tree.Node):
     """
     default = AND
 
-    def add(self, data, connector):
+    def add(self, data, connector,connection=connection):
         """
         Add a node to the where-tree. If the data is a list or tuple, it is
         expected to be of the form (alias, col_name, field_obj, lookup_type,
@@ -45,13 +45,13 @@ class WhereNode(tree.Node):
         alias, col, field, lookup_type, value = data
         try:
             if field:
-                params = field.get_db_prep_lookup(lookup_type, value)
+                params = field.get_db_prep_lookup(lookup_type, value, connection)
                 db_type = field.db_type()
             else:
                 # This is possible when we add a comparison to NULL sometimes
                 # (we don't really need to waste time looking up the associated
                 # field object).
-                params = Field().get_db_prep_lookup(lookup_type, value)
+                params = Field().get_db_prep_lookup(lookup_type, value, connection)
                 db_type = None
         except ObjectDoesNotExist:
             # This can happen when trying to insert a reference to a null pk.

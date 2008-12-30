@@ -313,7 +313,7 @@ class Model(object):
             return getattr(self, field_name)
         return getattr(self, field.attname)
 
-    def save(self, force_insert=False, force_update=False):
+    def save(self, force_insert=False, force_update=False, using=None):
         """
         Saves the current instance. Override this in a subclass if you want to
         control the saving process.
@@ -325,12 +325,12 @@ class Model(object):
         if force_insert and force_update:
             raise ValueError("Cannot force both insert and updating in "
                     "model saving.")
-        self.save_base(force_insert=force_insert, force_update=force_update)
+        self.save_base(force_insert=force_insert, force_update=force_update, using=using)
 
     save.alters_data = True
 
     def save_base(self, raw=False, cls=None, force_insert=False,
-            force_update=False):
+            force_update=False, using=None):
         """
         Does the heavy-lifting involved in saving. Subclasses shouldn't need to
         override this method. It's separate from save() in order to hide the
@@ -347,6 +347,12 @@ class Model(object):
             meta = cls._meta
             signal = False
 
+        # get model's connection
+        from django.db import get_current_connection, get_connection
+        if using:
+            conn = get_connection(using)
+        else:
+            conn = self.__connection__ or get_current_connection()
         # If we are in a raw save, save the object exactly as presented.
         # That means that we don't try to be smart about saving attributes
         # that might have come from the parent class - we just save the
@@ -372,11 +378,11 @@ class Model(object):
         if pk_set:
             # Determine whether a record with the primary key already exists.
             if (force_update or (not force_insert and
-                    manager.filter(pk=pk_val).extra(select={'a': 1}).values('a').order_by())):
+                    manager.get_query_set_by_connection(conn).filter(pk=pk_val).extra(select={'a': 1}).values('a').order_by())):
                 # It does already exist, so do an UPDATE.
                 if force_update or non_pks:
-                    values = [(f, None, f.get_db_prep_save(raw and getattr(self, f.attname) or f.pre_save(self, False))) for f in non_pks]
-                    rows = manager.filter(pk=pk_val)._update(values)
+                    values = [(f, None, f.get_db_prep_save(raw and getattr(self, f.attname) or f.pre_save(self, False), conn)) for f in non_pks]
+                    rows = manager.get_query_set_by_connection(conn).filter(pk=pk_val)._update(values)
                     if force_update and not rows:
                         raise DatabaseError("Forced update did not affect any rows.")
             else:
@@ -385,9 +391,9 @@ class Model(object):
             if not pk_set:
                 if force_update:
                     raise ValueError("Cannot force an update in save() with no primary key.")
-                values = [(f, f.get_db_prep_save(raw and getattr(self, f.attname) or f.pre_save(self, True))) for f in meta.local_fields if not isinstance(f, AutoField)]
+                values = [(f, f.get_db_prep_save(raw and getattr(self, f.attname) or f.pre_save(self, True), conn)) for f in meta.local_fields if not isinstance(f, AutoField)]
             else:
-                values = [(f, f.get_db_prep_save(raw and getattr(self, f.attname) or f.pre_save(self, True))) for f in meta.local_fields]
+                values = [(f, f.get_db_prep_save(raw and getattr(self, f.attname) or f.pre_save(self, True), conn)) for f in meta.local_fields]
 
             if meta.order_with_respect_to:
                 field = meta.order_with_respect_to
@@ -397,14 +403,14 @@ class Model(object):
             update_pk = bool(meta.has_auto_field and not pk_set)
             if values:
                 # Create a new record.
-                result = manager._insert(values, return_id=update_pk)
+                result = manager._insert(values, return_id=update_pk, connection=conn)
             else:
                 # Create a new record with defaults for everything.
-                result = manager._insert([(meta.pk, connection.ops.pk_default_value())], return_id=update_pk, raw_values=True)
+                result = manager._insert([(meta.pk, conn.ops.pk_default_value())], return_id=update_pk, raw_values=True, connection=conn)
 
             if update_pk:
                 setattr(self, meta.pk.attname, result)
-        transaction.commit_unless_managed()
+        transaction.commit_unless_managed(conn) # need by connection
 
         if signal:
             signals.post_save.send(sender=self.__class__, instance=self,

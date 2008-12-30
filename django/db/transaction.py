@@ -139,7 +139,7 @@ def managed(flag=True):
     else:
         raise TransactionManagementError("This code isn't under transaction management")
 
-def commit_unless_managed():
+def commit_unless_managed(connection=connection):
     """
     Commits changes if the system is not in managed transaction mode.
     """

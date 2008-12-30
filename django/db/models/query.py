@@ -123,7 +123,12 @@ class QuerySet(object):
     """
     def __init__(self, model=None, query=None):
         self.model = model
-        self.query = query or sql.Query(self.model, connection)
+        if not query and model and model._meta.using:
+            from django.db import get_connection, get_current_connection
+            conn = get_connection(model._meta.using)
+            self.query = query or conn.query_class()(self.model, conn)
+        else:
+            self.query = query or connection.query_class()(self.model, connection) #sql.Query(self.model, connection)
         self._result_cache = None
         self._iter = None
         self._sticky_filter = False
@@ -278,6 +283,8 @@ class QuerySet(object):
                         max_depth, requested=requested)
             else:
                 obj = self.model(*row[index_start:])
+                # add conection infomation?
+                obj.__connection__ = self.query.connection
             for i, k in enumerate(extra_select):
                 setattr(obj, k, row[i])
             yield obj
@@ -883,12 +890,12 @@ def delete_objects(seen_objs):
     transaction.commit_unless_managed()
 
 
-def insert_query(model, values, return_id=False, raw_values=False):
+def insert_query(model, values, return_id=False, raw_values=False, connection=connection):
     """
     Inserts a new record for the given model. This provides an interface to
     the InsertQuery class and is how Model.save() is implemented. It is not
     part of the public API.
     """
-    query = sql.InsertQuery(model, connection)
+    query = connection.insert_query_class(model, connection) #sql.InsertQuery(model, connection)
     query.insert_values(values, raw_values)
     return query.execute_sql(return_id)

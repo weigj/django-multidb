@@ -53,13 +53,39 @@ class BaseDatabaseWrapper(local):
 
     def cursor(self):
         from django.conf import settings
-        cursor = self._cursor(settings)
+        if hasattr(self, 'settings'):
+            cursor = self._cursor(self.settings)
+        else:
+            cursor = self._cursor(settings)
         if settings.DEBUG:
             return self.make_debug_cursor(cursor)
         return cursor
 
     def make_debug_cursor(self, cursor):
         return util.CursorDebugWrapper(cursor, self)
+    
+    def query_class(self):
+	from django.db.models import sql
+	if self.features.uses_custom_query_class:
+	    Query = self.ops.query_class(sql.BaseQuery)
+	else:
+	    Query = sql.BaseQuery
+	return Query
+    
+    def insert_query_class(self):
+        return sql.InsertQuery
+    
+    def update_query_class(self):
+        return sql.UpdateQuery
+    
+    def delete_query_class(self):
+        return sql.DeleteQuery
+    
+    def count_query_class(self):
+        return sql.CountQuery
+    
+    def date_query_class(self):
+        return sql.DateQuery
 
 class BaseDatabaseFeatures(object):
     # True if django.db.backend.utils.typecast_timestamp is used on values

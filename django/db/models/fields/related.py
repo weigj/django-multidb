@@ -116,7 +116,7 @@ class RelatedField(object):
         if not cls._meta.abstract:
             self.contribute_to_related_class(other, related)
 
-    def get_db_prep_lookup(self, lookup_type, value):
+    def get_db_prep_lookup(self, lookup_type, value, connection=connection):
         # If we are doing a lookup on a Related Field, we must be
         # comparing object instances. The value should be the PK of value,
         # not value itself.
@@ -135,7 +135,7 @@ class RelatedField(object):
             if field:
                 if lookup_type in ('range', 'in'):
                     v = [v]
-                v = field.get_db_prep_lookup(lookup_type, v)
+                v = field.get_db_prep_lookup(lookup_type, v, connection)
                 if isinstance(v, list):
                     v = v[0]
             return v
