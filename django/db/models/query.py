@@ -896,6 +896,6 @@ def insert_query(model, values, return_id=False, raw_values=False, connection=co
     the InsertQuery class and is how Model.save() is implemented. It is not
     part of the public API.
     """
-    query = connection.insert_query_class(model, connection) #sql.InsertQuery(model, connection)
+    query = sql.InsertQuery(model, connection)
     query.insert_values(values, raw_values)
     return query.execute_sql(return_id)
