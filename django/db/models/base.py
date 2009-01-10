@@ -352,7 +352,12 @@ class Model(object):
         if using:
             conn = get_connection(using)
         else:
-            conn = self.__connection__ or get_current_connection()
+            if hasattr(self,'__connection__'):
+                conn = self.__connection__ 
+            elif meta.using:
+                conn = get_connection(meta.using)
+            else:
+                conn = get_current_connection()
         # If we are in a raw save, save the object exactly as presented.
         # That means that we don't try to be smart about saving attributes
         # that might have come from the parent class - we just save the

@@ -72,20 +72,20 @@ class BaseDatabaseWrapper(local):
 	    Query = sql.BaseQuery
 	return Query
     
-    def insert_query_class(self):
-        return sql.InsertQuery
+    def insert_query_class(self, DefaultInsertQueryClass):
+        return DefaultInsertQueryClass
     
-    def update_query_class(self):
-        return sql.UpdateQuery
+    def update_query_class(self, DefaultUpdateQueryClass):
+        return DefaultUpdateQueryClass
     
-    def delete_query_class(self):
-        return sql.DeleteQuery
+    def delete_query_class(self, DefaultDeleteQueryClass):
+        return DefaultDeleteQueryClass
     
-    def count_query_class(self):
-        return sql.CountQuery
+    def count_query_class(self, DefaultCountQueryClass):
+        return DefaultCountQueryClass
     
-    def date_query_class(self):
-        return sql.DateQuery
+    def date_query_class(self, DefaultDateQueryClass):
+        return DefaultDateQueryClass
 
 class BaseDatabaseFeatures(object):
     # True if django.db.backend.utils.typecast_timestamp is used on values

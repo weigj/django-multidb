@@ -659,11 +659,11 @@ class ForeignKey(RelatedField, Field):
             return getattr(field_default, self.rel.get_related_field().attname)
         return field_default
 
-    def get_db_prep_save(self, value):
+    def get_db_prep_save(self, value, connection=connection):
         if value == '' or value == None:
             return None
         else:
-            return self.rel.get_related_field().get_db_prep_save(value)
+            return self.rel.get_related_field().get_db_prep_save(value, connection)
 
     def value_to_string(self, obj):
         if not obj:

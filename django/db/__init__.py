@@ -68,14 +68,12 @@ for name in settings.DATABASES:
     wrapper = backend.DatabaseWrapper(**options.DATABASE_OPTIONS)
     wrapper.settings = options
     wrapper.name = name
-    #wrapper._cursor(options)
     _connections[name] = wrapper
 
 def get_backend(name):
     return _backends[settings.DATABASES[name]['DATABASE_ENGINE']]
 
 def get_connection(name):
-    #settings = _settings[name]
     wrapper = _connections[name]
     return wrapper
 
@@ -105,7 +103,7 @@ class using(object):
     def __exit__(self, etyp, einst, etb):
         leave_connection_management()
 
-class ConnectionDesc(object):
+class ConnectionDescriptor(object):
     def __getattribute__(self, key):
         db =  get_current_connection()
         return db.__getattribute__(key)
@@ -117,7 +115,7 @@ def get_current_connection():
     else:
         return _connection
 
-connection = ConnectionDesc()
+connection = ConnectionDescriptor()
 
 # Register an event that closes the database connection
 # when a Django request is finished.

@@ -17,6 +17,17 @@ def ensure_default_manager(sender, **kwargs):
 
 signals.class_prepared.connect(ensure_default_manager)
 
+def ensure_model_bind(sender, **kwargs):
+    from django.conf import settings
+    import re
+    cls = sender
+    for key in settings.MODEL_BINDS:
+        if re.match(key, '%s.%s' %(cls.__module__, cls.__name__)):
+            cls._meta.using = settings.MODEL_BINDS[key]
+
+    
+signals.class_prepared.connect(ensure_model_bind)
+
 class Manager(object):
     # Tracks each time a Manager instance is created. Used to retain order.
     creation_counter = 0
